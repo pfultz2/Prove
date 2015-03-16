@@ -20,6 +20,13 @@
 #define PROVE_NO_MOVABLE_STREAMS 1
 #endif
 
+#define PROVE_PRIMITIVE_CAT(x, ...) x ## __VA_ARGS__
+#define PROVE_CAT(x, ...) PROVE_PRIMITIVE_CAT(x, __VA_ARGS__)
+
+
+#define PROVE_PRIMITIVE_STRINGIZE(...) #__VA_ARGS__
+#define PROVE_STRINGIZE(...) PROVE_PRIMITIVE_STRINGIZE(__VA_ARGS__)
+
 namespace prove {
 
 struct context
@@ -139,7 +146,7 @@ predicate_result check_expression(F f)
     return pr;
 }
 
-#define PROVE_CHECK(...) PROVE_CHECK_PREDICATE(prove::check_expression([&]{ return prove::capture() ->* __VA_ARGS__; }))
+#define PROVE_CHECK(...) prove::check_predicate(PROVE_CONTEXT(__VA_ARGS__), prove::check_expression([&]{ return prove::capture() ->* __VA_ARGS__; }))
 
 #define PROVE_RETURNS(...) -> decltype(__VA_ARGS__) { return (__VA_ARGS__); } static_assert(true, "")
 
@@ -172,7 +179,7 @@ struct expression
     expression(T lhs, U rhs) : lhs(lhs), rhs(rhs)
     {}
 
-    template<class Stream>
+    template<class Stream, class=typename std::enable_if<!std::is_same<Stream, predicate_result>::value>::type>
     friend Stream& operator<<(Stream& s, const expression& self)
     {
         s << " [ " << self.lhs << " " << Operator::as_string() << " " << self.rhs << " ]";
@@ -260,12 +267,13 @@ struct auto_register
     }
 };
 
-#define PROVE_CASE(name) \
+#define PROVE_DETAIL_CASE(name) \
 struct name \
 { void operator()(prove::context::callback_function prove_callback) const; }; \
-static prove::auto_register name ## _register = prove::auto_register(#name, name()); \
+static prove::auto_register PROVE_CAT(name, _register) = prove::auto_register(PROVE_STRINGIZE(name), name()); \
 void name::operator()(prove::context::callback_function prove_callback) const
 
+#define PROVE_CASE(...) PROVE_DETAIL_CASE(PROVE_CAT(__VA_ARGS__ ## _case_, __LINE__))
 
 void run()
 {
