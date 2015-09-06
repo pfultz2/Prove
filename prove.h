@@ -147,6 +147,7 @@ predicate_result check_expression(F f)
 }
 
 #define PROVE_CHECK(...) prove::check_predicate(PROVE_CONTEXT(__VA_ARGS__), prove::check_expression([&]{ return prove::capture() ->* __VA_ARGS__; }))
+#define PROVE_STATIC_CHECK(...) static_assert((__VA_ARGS__), #__VA_ARGS__)
 
 #define PROVE_RETURNS(...) -> decltype(__VA_ARGS__) { return (__VA_ARGS__); } static_assert(true, "")
 
@@ -211,7 +212,7 @@ struct lhs_expression
     lhs_expression(T e) : lhs(e)
     {}
 
-    template<class Stream>
+    template<class Stream, class=typename std::enable_if<!std::is_same<Stream, predicate_result>::value>::type>
     friend Stream& operator<<(Stream& s, const lhs_expression& self)
     {
         s << self.lhs;
