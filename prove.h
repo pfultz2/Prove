@@ -191,18 +191,19 @@ struct expression
 };
 
 template<class T, class U, class Operator>
-expression<T, U, Operator> make_expression(const T& rhs, const U& lhs, Operator)
+expression<typename std::decay<T>::type, typename std::decay<U>::type, Operator> 
+make_expression(T&& rhs, U&& lhs, Operator)
 {
-    return expression<T, U, Operator>(rhs, lhs);
+    return { std::forward<T>(rhs), std::forward<U>(lhs) };
 }
 
 template<class T>
 struct lhs_expression;
 
 template<class T>
-lhs_expression<T> make_lhs_expression(const T& lhs)
+lhs_expression<typename std::decay<T>::type> make_lhs_expression(T&& lhs)
 {
-    return lhs_expression<T>(lhs);
+    return { std::forward<T>(lhs) };
 }
 
 template<class T>
