@@ -15,6 +15,9 @@
 #include <sstream>
 #include <memory>
 #include <iostream>
+#ifdef _MSC_VER
+#include <iso646.h>
+#endif
 
 #ifndef PROVE_NO_MOVABLE_STREAMS
 #define PROVE_NO_MOVABLE_STREAMS 1
