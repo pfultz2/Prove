@@ -46,8 +46,6 @@ struct context
     }
 };
 
-#define PROVE_CONTEXT(...) prove::context(prove_callback, #__VA_ARGS__, __FILE__, __LINE__)
-
 // TODO: Add not operator
 class predicate_result
 {
@@ -117,12 +115,12 @@ predicate_result as_predicate_result(const T& expr)
     return pr;
 }
 
-void check_predicate(const context& ctx, const predicate_result& pr)
-{
-    if (not pr.result()) ctx.fail(pr.message()); 
-}
+// void check_predicate(const context& ctx, const predicate_result& pr)
+// {
+//     if (not pr.result()) ctx.fail(pr.message()); 
+// }
 
-#define PROVE_CHECK_PREDICATE(...) prove::check_predicate(PROVE_CONTEXT(__VA_ARGS__), __VA_ARGS__)
+// #define PROVE_CHECK_PREDICATE(...) prove::check_predicate(PROVE_CONTEXT(__VA_ARGS__), __VA_ARGS__)
 
 template<class F>
 predicate_result check_expression(F f)
@@ -146,8 +144,8 @@ predicate_result check_expression(F f)
     return pr;
 }
 
-#define PROVE_CHECK(...) prove::check_predicate(PROVE_CONTEXT(__VA_ARGS__), prove::check_expression([&]{ return prove::capture() ->* __VA_ARGS__; }))
-#define PROVE_STATIC_CHECK(...) static_assert((__VA_ARGS__), #__VA_ARGS__)
+// #define PROVE_CHECK(...) prove::check_predicate(PROVE_CONTEXT(__VA_ARGS__), prove::check_expression([&]{ return prove::capture() ->* __VA_ARGS__; }))
+// #define PROVE_STATIC_CHECK(...) static_assert((__VA_ARGS__), #__VA_ARGS__)
 
 #define PROVE_RETURNS(...) -> decltype(__VA_ARGS__) { return (__VA_ARGS__); } static_assert(true, "")
 
@@ -257,30 +255,143 @@ struct capture
     auto operator->* (const T& x) PROVE_RETURNS(detail::make_lhs_expression(x));
 };
 
-
-typedef std::function<void(prove::context::callback_function prove_callback)> test_case;
-static std::vector<std::pair<std::string, test_case> > test_cases;
-
-struct auto_register
+template<class Prove_TypeName_>
+const std::string& get_type_name()
 {
-    auto_register(std::string name, test_case tc)
+    static std::string name;
+
+    if (name.empty())
     {
-        test_cases.push_back(std::make_pair(name, tc));
+#if 1
+        const char parameter_name[] = "Prove_TypeName_ =";
+
+        name = __PRETTY_FUNCTION__;
+
+        auto begin = name.find(parameter_name) + sizeof(parameter_name) + 1;
+        auto length = name.find("]",begin) - begin;
+        name = name.substr(begin, length);
+#else
+        name = typeid(Prove_TypeName_).name();
+#endif
+    }
+
+
+    return name;
+}
+
+template<class T, class F>
+struct auto_register_factory
+{
+    auto_register_factory()
+    {
+        F::template apply<T>();
     }
 };
 
+template<class T, class F>
+struct auto_register
+{
+    static auto_register_factory<T, F> static_register_;
+
+    auto_register()
+    {
+        this->register_();
+    }
+
+    bool register_()
+    {
+        (void)&static_register_;
+        return true;
+    }
+};
+
+template<class T, class F>
+auto_register_factory<T, F> auto_register<T, F>::static_register_ = auto_register_factory<T, F>();
+
+struct test_case_register
+{
+    typedef std::function<void(prove::context::callback_function prove_callback)> run_case;
+    static std::vector<std::pair<std::string, run_case>>& get_cases()
+    {
+        static std::vector<std::pair<std::string, run_case>> x;
+        return x;
+    }
+
+    template<class T>
+    static void apply()
+    {
+        register_case(get_type_name<T>(), [](prove::context::callback_function prove_callback)
+        {
+            T c;
+            c.prove_callback = prove_callback;
+            c.run();
+        });
+    }
+
+    static void register_case(const std::string& name, run_case rc)
+    {
+        get_cases().push_back(std::make_pair(name, rc));
+    }
+};
+
+template<class Derived>
+struct test_case : auto_register<Derived, test_case_register>
+{
+    prove::context::callback_function prove_callback;
+    bool register_bool;
+
+    test_case()
+    {
+        register_bool = this->register_();
+    }
+
+    context create_context(const std::string& t, const std::string& f, int l)
+    {
+        return context(prove_callback, t, f, l);
+    }
+
+    context create_context(const std::string& t)
+    {
+        return this->create_context(t, "", 0);
+    }
+
+    context create_context()
+    {
+        return this->create_context("", "", 0);
+    }
+
+    void check(const predicate_result& pr, const context& ctx)
+    {
+        if (not pr.result()) ctx.fail(pr.message());
+    }
+
+    void check(const predicate_result& pr, const std::string& t="")
+    {
+        if (not pr.result()) this->create_context(t).fail(pr.message());
+    }
+
+    void check(bool b, const std::string& message="")
+    {
+        if (not b) this->create_context().fail(message);
+    }
+};
+
+#define PROVE_CONTEXT(...) this->create_context(#__VA_ARGS__, __FILE__, __LINE__)
+#define PROVE_CHECK(...) this->check(prove::check_expression([&]{ return prove::capture() ->* __VA_ARGS__; }), PROVE_CONTEXT(__VA_ARGS__))
+#define PROVE_STATIC_CHECK(...) static_assert((__VA_ARGS__), #__VA_ARGS__)
+
 #define PROVE_DETAIL_CASE(name) \
-struct name \
-{ void operator()(prove::context::callback_function prove_callback) const; }; \
-static prove::auto_register PROVE_CAT(name, _register) = prove::auto_register(PROVE_STRINGIZE(name), name()); \
-void name::operator()(prove::context::callback_function prove_callback) const
+struct name : prove::test_case<name> \
+{ void run(); }; \
+void name::run()
+
 
 #define PROVE_CASE(...) PROVE_DETAIL_CASE(PROVE_CAT(__VA_ARGS__ ## _case_, __LINE__))
 
 void run()
 {
     bool failed = false;
-    for(const auto& tc: test_cases)
+    for(const auto& tc: test_case_register::get_cases())
     {
         tc.second([&](const context& ctx, const std::string& message)
         {
@@ -289,7 +400,7 @@ void run()
             failed = true;
         });
     }
-    if (not failed) std::cout << "All " << test_cases.size() << " test cases passed." << std::endl;
+    if (not failed) std::cout << "All " << test_case_register::get_cases().size() << " test cases passed." << std::endl;
 }
 
 }
