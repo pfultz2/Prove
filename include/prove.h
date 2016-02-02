@@ -262,6 +262,7 @@ const std::string& get_type_name()
     {
 #ifdef _MSC_VER
         name = typeid(Prove_TypeName_).name();
+        name = name.substr(7);
 #else
         const char parameter_name[] = "Prove_TypeName_ =";
 
