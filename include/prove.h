@@ -267,8 +267,8 @@ const std::string& get_type_name()
 
         name = __PRETTY_FUNCTION__;
 
-        auto begin = name.find(parameter_name) + sizeof(parameter_name) + 1;
-        auto length = name.find("]",begin) - begin;
+        auto begin = name.find(parameter_name) + sizeof(parameter_name);
+        auto length = name.find_first_of("];", begin) - begin;
         name = name.substr(begin, length);
 #endif
     }

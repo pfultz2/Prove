@@ -26,3 +26,11 @@ struct my_case : prove::test_case<my_case>
         this->check(get_predicate(), "Failed predicate");
     }
 };
+
+struct check_typename : prove::test_case<check_typename>
+{
+    void test()
+    {
+        PROVE_CHECK(prove::get_type_name<check_typename>() == "check_typename");
+    }
+};
