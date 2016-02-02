@@ -196,14 +196,14 @@ struct lhs_expression;
 template<class T>
 lhs_expression<typename std::decay<T>::type> make_lhs_expression(T&& lhs)
 {
-    return { std::forward<T>(lhs) };
+    return lhs_expression<typename std::decay<T>::type>{ std::forward<T>(lhs) };
 }
 
 template<class T>
 struct lhs_expression
 {
     T lhs;
-    lhs_expression(T e) : lhs(e)
+    explicit lhs_expression(T e) : lhs(e)
     {}
 
     template<class Stream, class=typename std::enable_if<!std::is_same<Stream, predicate_result>::value>::type>
