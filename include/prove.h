@@ -109,7 +109,7 @@ public:
 
 predicate_result as_predicate_result(predicate_result expr)
 {
-    return std::move(expr);
+    return expr;
 }
 template<class T>
 auto as_predicate_result(const T& expr) 
