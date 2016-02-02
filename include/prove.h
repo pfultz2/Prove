@@ -260,7 +260,9 @@ const std::string& get_type_name()
 
     if (name.empty())
     {
-#if 1
+#ifdef _MSC_VER
+        name = typeid(Prove_TypeName_).name();
+#else
         const char parameter_name[] = "Prove_TypeName_ =";
 
         name = __PRETTY_FUNCTION__;
@@ -268,8 +270,6 @@ const std::string& get_type_name()
         auto begin = name.find(parameter_name) + sizeof(parameter_name) + 1;
         auto length = name.find("]",begin) - begin;
         name = name.substr(begin, length);
-#else
-        name = typeid(Prove_TypeName_).name();
 #endif
     }
 
