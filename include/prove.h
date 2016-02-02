@@ -170,7 +170,7 @@ struct expression
     T lhs;
     U rhs;
 
-    expression(T lhs, U rhs) : lhs(lhs), rhs(rhs)
+    expression(T lhs_, U rhs_) : lhs(lhs_), rhs(rhs_)
     {}
 
     template<class Stream, class=typename std::enable_if<!std::is_same<Stream, predicate_result>::value>::type>
