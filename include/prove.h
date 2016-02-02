@@ -29,6 +29,10 @@
 
 namespace prove {
 
+template<class T, class... Ts>
+struct head
+{ typedef T type; };
+
 struct context
 {
     typedef std::function<void(const context& ctx, const std::string& message)> callback_function;
@@ -103,24 +107,18 @@ public:
     }
 };
 
-predicate_result as_predicate_result(predicate_result&& expr)
+predicate_result as_predicate_result(predicate_result expr)
 {
     return std::move(expr);
 }
 template<class T>
-predicate_result as_predicate_result(const T& expr)
+auto as_predicate_result(const T& expr) 
+    -> typename head<predicate_result, decltype(expr.value())>::type
 {
     predicate_result pr(expr.value());
     pr << expr;
     return pr;
 }
-
-// void check_predicate(const context& ctx, const predicate_result& pr)
-// {
-//     if (not pr.result()) ctx.fail(pr.message()); 
-// }
-
-// #define PROVE_CHECK_PREDICATE(...) prove::check_predicate(PROVE_CONTEXT(__VA_ARGS__), __VA_ARGS__)
 
 template<class F>
 predicate_result check_expression(F f)
@@ -129,7 +127,7 @@ predicate_result check_expression(F f)
     try
     {
         auto result = f();
-        return as_predicate_result(result);
+        return as_predicate_result(std::move(result));
     }
     catch(const std::exception& ex)
     {
@@ -143,9 +141,6 @@ predicate_result check_expression(F f)
     }
     return pr;
 }
-
-// #define PROVE_CHECK(...) prove::check_predicate(PROVE_CONTEXT(__VA_ARGS__), prove::check_expression([&]{ return prove::capture() ->* __VA_ARGS__; }))
-// #define PROVE_STATIC_CHECK(...) static_assert((__VA_ARGS__), #__VA_ARGS__)
 
 #define PROVE_RETURNS(...) -> decltype(__VA_ARGS__) { return (__VA_ARGS__); } static_assert(true, "")
 
@@ -324,7 +319,7 @@ struct test_case_register
         {
             T c;
             c.prove_callback = prove_callback;
-            c.run();
+            c.test();
         });
     }
 
@@ -338,15 +333,10 @@ template<class Derived>
 struct test_case : auto_register<Derived, test_case_register>
 {
     prove::context::callback_function prove_callback;
-    bool register_bool;
-
-    test_case()
-    {
-        register_bool = this->register_();
-    }
 
     context create_context(const std::string& t, const std::string& f, int l)
     {
+        this->register_();
         return context(prove_callback, t, f, l);
     }
 
@@ -382,8 +372,8 @@ struct test_case : auto_register<Derived, test_case_register>
 
 #define PROVE_DETAIL_CASE(name) \
 struct name : prove::test_case<name> \
-{ void run(); }; \
-void name::run()
+{ name() {} void test(); }; \
+void name::test()
 
 
 #define PROVE_CASE(...) PROVE_DETAIL_CASE(PROVE_CAT(__VA_ARGS__ ## _case_, __LINE__))
