@@ -1,0 +1,6 @@
+Name: Prove
+Description: Lightweight C++ test framework
+URL: https://github.com/pfultz2/Prove
+Version: @Prove_VERSION_MAJOR@.@Prove_VERSION_MINOR@
+
+Cflags: -I@CMAKE_INSTALL_PREFIX@/include
