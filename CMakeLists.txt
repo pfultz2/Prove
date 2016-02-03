@@ -33,7 +33,7 @@ foreach(flag ${ENABLE_CXXFLAGS_TO_CHECK})
     endif()
 endforeach()
 
-install (FILES include/prove.h DESTINATION include)
+install (FILES include/prove.hpp DESTINATION include)
 configure_file(prove.pc.in prove.pc)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/prove.pc DESTINATION lib/pkgconfig)
 
