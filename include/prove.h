@@ -269,11 +269,14 @@ const std::string& get_type_name()
         name = __PRETTY_FUNCTION__;
 
         auto begin = name.find(parameter_name) + sizeof(parameter_name);
+#if (defined(__GNUC__) && !defined (__clang__) && __GNUC__ == 4 && __GNUC_MINOR__ < 7)
+        auto length = name.find_last_of(",") - begin;
+#else
         auto length = name.find_first_of("];", begin) - begin;
+#endif
         name = name.substr(begin, length);
 #endif
     }
-
 
     return name;
 }
