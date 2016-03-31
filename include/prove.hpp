@@ -81,6 +81,12 @@ class predicate_result
     }
 #endif
 public:
+    predicate_result() : r(false)
+#if PROVE_NO_MOVABLE_STREAMS
+    , ss(new std::stringstream())
+#endif
+    {};
+
     predicate_result(bool result) : r(result)
 #if PROVE_NO_MOVABLE_STREAMS
     , ss(new std::stringstream())
@@ -105,6 +111,11 @@ public:
     }
 
     bool result() const
+    {
+        return r;
+    }
+
+    bool& result()
     {
         return r;
     }

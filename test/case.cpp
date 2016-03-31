@@ -8,11 +8,20 @@ prove::predicate_result get_predicate()
     return r;
 }
 
+prove::predicate_result get_assign_predicate()
+{
+    prove::predicate_result r;
+    r.result() = true;
+    r << "Predicate result failed";
+    return r;
+}
+
 PROVE_CASE()
 {
     int i = 5;
     PROVE_CHECK(i == 5);
     PROVE_CHECK(get_predicate());
+    PROVE_CHECK(get_assign_predicate());
     PROVE_CHECK(true);
 }
 
