@@ -19,9 +19,6 @@
 #include <iso646.h>
 #endif
 
-#ifndef PROVE_NO_MOVABLE_STREAMS
-#define PROVE_NO_MOVABLE_STREAMS 1
-#endif
 
 #define PROVE_PRIMITIVE_CAT(x, ...) x ## __VA_ARGS__
 #define PROVE_CAT(x, ...) PROVE_PRIMITIVE_CAT(x, __VA_ARGS__)
@@ -53,39 +50,47 @@ struct context
     }
 };
 
+template<class T, class=void>
+struct stream_base
+{
+    stream_base() : ss()
+    {}
+    T ss;
+    T& stream()
+    {
+        return this->ss;
+    }
+
+    const T& stream() const
+    {
+        return this->ss;
+    }
+};
+
+template<class T>
+struct stream_base<T, typename std::enable_if<!std::is_move_constructible<T>::value>::type>
+{
+    stream_base() : ss(new T())
+    {}
+    std::unique_ptr<T> ss;
+    T& stream()
+    {
+        return *this->ss;
+    }
+
+    const T& stream() const
+    {
+        return *this->ss;
+    }
+};
+
 // TODO: Add not operator
-class predicate_result
+class predicate_result : stream_base<std::stringstream>
 {
     bool r;
-#if PROVE_NO_MOVABLE_STREAMS
-    std::unique_ptr<std::stringstream> ss;
-    std::stringstream& stream()
-    {
-        return *this->ss;
-    }
-
-    const std::stringstream& stream() const
-    {
-        return *this->ss;
-    }
-#else
-    std::stringstream ss;
-    std::stringstream& stream()
-    {
-        return this->ss;
-    }
-
-    const std::stringstream& stream() const
-    {
-        return this->ss;
-    }
-#endif
 public:
     predicate_result(bool result) : r(result)
-#if PROVE_NO_MOVABLE_STREAMS
-    , ss(new std::stringstream())
-#endif
-    {};
+    {}
 
     template<class T>
     predicate_result& operator<<(const T& x)
