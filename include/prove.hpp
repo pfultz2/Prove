@@ -68,7 +68,16 @@ struct stream_base
 };
 
 template<class T>
-struct stream_base<T, typename std::enable_if<!std::is_move_constructible<T>::value>::type>
+struct is_movable
+#if defined(__GNUC__) && !defined (__clang__) && __GNUC__ == 4 && __GNUC_MINOR__ < 7
+: std::false_type
+#else
+: std::is_move_constructible<T>
+#endif
+{};
+
+template<class T>
+struct stream_base<T, typename std::enable_if<!is_movable<T>::value>::type>
 {
     stream_base() : ss(new T())
     {}
@@ -88,11 +97,12 @@ struct stream_base<T, typename std::enable_if<!std::is_move_constructible<T>::va
 class predicate_result : stream_base<std::stringstream>
 {
     bool r;
+    typedef stream_base<std::stringstream> base;
 public:
     predicate_result() : r(false)
     {};
 
-    predicate_result(bool result) : r(result)
+    predicate_result(bool result) : r(result), base()
     {}
 
     template<class T>
