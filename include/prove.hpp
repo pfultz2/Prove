@@ -99,10 +99,10 @@ class predicate_result : stream_base<std::stringstream>
     bool r;
     typedef stream_base<std::stringstream> base;
 public:
-    predicate_result() : r(false)
+    predicate_result() : base(), r(false)
     {};
 
-    predicate_result(bool result) : r(result), base()
+    predicate_result(bool result) : base(), r(result)
     {}
 
     template<class T>
