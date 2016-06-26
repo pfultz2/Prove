@@ -90,9 +90,6 @@ class predicate_result : stream_base<std::stringstream>
     bool r;
 public:
     predicate_result() : r(false)
-#if PROVE_NO_MOVABLE_STREAMS
-    , ss(new std::stringstream())
-#endif
     {};
 
     predicate_result(bool result) : r(result)
