@@ -400,13 +400,16 @@ struct test_case : auto_register<Derived, test_case_register>
 #define PROVE_CHECK(...) this->check(prove::check_expression([&]{ return prove::capture() ->* __VA_ARGS__; }), PROVE_CONTEXT(__VA_ARGS__))
 #define PROVE_STATIC_CHECK(...) static_assert((__VA_ARGS__), #__VA_ARGS__)
 
+#define PROVE_DETAIL_CASE_CLASS(name) \
+struct name : prove::test_case<name>
+
 #define PROVE_DETAIL_CASE(name) \
 struct name : prove::test_case<name> \
 { name() {} void test(); }; \
 void name::test()
 
-
 #define PROVE_CASE(...) PROVE_DETAIL_CASE(PROVE_CAT(__VA_ARGS__ ## _case_, __LINE__))
+#define PROVE_CASE_CLASS(...) PROVE_DETAIL_CASE_CLASS(PROVE_CAT(__VA_ARGS__ ## _case_, __LINE__))
 
 void run()
 {
