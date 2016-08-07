@@ -105,6 +105,11 @@ public:
     predicate_result(bool result) : base(), r(result)
     {}
 
+    predicate_result(bool result, std::string message) : base(), r(result)
+    {
+        *this << message;
+    }
+
     template<class T>
     predicate_result& operator<<(const T& x)
     {
@@ -396,8 +401,26 @@ struct test_case : auto_register<Derived, test_case_register>
     }
 };
 
+template<class F>
+predicate_result throws(F f, std::string s="")
+{
+    try { f(); }
+    catch(...) { return {true, s}; }
+    return {false, s};
+}
+
+template<class Exception, class F>
+predicate_result throws(F f, std::string s="")
+{
+    try { f(); }
+    catch(const Exception&) { return {true, s}; }
+    return {false, s};
+}
+
 #define PROVE_CONTEXT(...) this->create_context(#__VA_ARGS__, __FILE__, __LINE__)
 #define PROVE_CHECK(...) this->check(prove::check_expression([&]{ return prove::capture() ->* __VA_ARGS__; }), PROVE_CONTEXT(__VA_ARGS__))
+#define PROVE_THROWS(...) this->check(prove::throws([&]{ __VA_ARGS__; }, "Failed to throw"), PROVE_CONTEXT(__VA_ARGS__))
+#define PROVE_THROWS_AS(expr, ...) this->check(prove::throws<__VA_ARGS__>([&]{ expr; }, "Failed to throw exception " #__VA_ARGS__), PROVE_CONTEXT(expr))
 #define PROVE_STATIC_CHECK(...) static_assert((__VA_ARGS__), #__VA_ARGS__)
 
 #define PROVE_DETAIL_CASE_CLASS(name) \

@@ -1,6 +1,8 @@
 
 #include "test.h"
 
+#include <exception>
+
 prove::predicate_result get_predicate()
 {
     prove::predicate_result r(true);
@@ -43,3 +45,26 @@ struct check_typename : prove::test_case<check_typename>
         PROVE_CHECK(prove::get_type_name<check_typename>() == "check_typename");
     }
 };
+
+struct throws_case : prove::test_case<throws_case>
+{
+    void simple_throw()
+    {
+        throw 1;
+    }
+
+    void runtime_error_throw()
+    {
+        throw std::runtime_error("Error");
+    }
+    void test()
+    {
+        PROVE_THROWS(this->simple_throw());
+        PROVE_THROWS(this->runtime_error_throw());
+
+        PROVE_THROWS_AS(this->simple_throw(), int);
+        PROVE_THROWS_AS(this->runtime_error_throw(), std::runtime_error);
+    }
+};
+
+
