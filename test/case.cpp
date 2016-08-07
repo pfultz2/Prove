@@ -2,6 +2,7 @@
 #include "test.h"
 
 #include <exception>
+#include <stdexcept>
 
 prove::predicate_result get_predicate()
 {
