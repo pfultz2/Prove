@@ -56,3 +56,4 @@ include(CTest)
 include_directories(include)
 
 add_test_executable(case)
+add_test_executable(register)

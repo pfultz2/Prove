@@ -322,17 +322,7 @@ template<class T, class F>
 struct auto_register
 {
     static auto_register_factory<T, F> static_register_;
-
-    auto_register()
-    {
-        this->register_();
-    }
-
-    bool register_()
-    {
-        (void)&static_register_;
-        return true;
-    }
+    typedef std::integral_constant<decltype(&static_register_), &static_register_> static_register_type_;
 };
 
 template<class T, class F>
@@ -371,7 +361,6 @@ struct test_case : auto_register<Derived, test_case_register>
 
     context create_context(const std::string& t, const std::string& f, int l)
     {
-        this->register_();
         return context(prove_callback, t, f, l);
     }
 
